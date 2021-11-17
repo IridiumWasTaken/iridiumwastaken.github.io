@@ -1,3 +1,5 @@
+import { initialize } from './navclient.js';
+
 document.addEventListener('DOMContentLoaded', init, false);
 function init() {
   if ('serviceWorker' in navigator) {
@@ -8,8 +10,6 @@ function init() {
         console.error('Service worker not registered -->', err);
       });
   }
-
-  import { initialize } from './navclient.js';
 
   const authOptions = {
       username: 'a.loewenstein',
