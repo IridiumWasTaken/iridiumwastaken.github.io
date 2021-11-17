@@ -1,4 +1,4 @@
-import { initialize } from './navclient.js';
+// import { initialize } from './navclient.js';
 
 document.addEventListener('DOMContentLoaded', init, false);
 function init() {
