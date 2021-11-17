@@ -1,4 +1,4 @@
-const httpntlm = require('httpntlm')
+import { httpntlm } from './httpntlm_browser.js';
 
 
 // Send a request to NAV using NTLM authentication.
@@ -49,12 +49,6 @@ function initialize({ username, password, domain }) {
             }
         })
     }    
-}
-
-
-
-module.exports = {
-    initialize
 }
 
 export { initialize }

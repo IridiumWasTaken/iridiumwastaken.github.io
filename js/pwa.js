@@ -12,9 +12,9 @@ function init() {
   import { initialize } from './navclient.js';
 
   const authOptions = {
-    username: 'a.loewenstein',
-    password: 'AQ1sw2',
-    domain: 'tardis'
+      username: 'a.loewenstein',
+      password: 'AQ1sw2',
+      domain: 'tardis'
   }
 
   const request = initialize(authOptions)
@@ -29,11 +29,13 @@ function init() {
       */
   }
 
+  console.log("Before request");
   request(requestOptions, (err, data) => {
-    console.log("Hier")
+    console.log("in request");
       if(err) {
           return console.log(err)
       } 
       console.log(JSON.stringify(data))
   })
+
 }
