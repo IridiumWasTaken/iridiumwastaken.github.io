@@ -56,3 +56,5 @@ function initialize({ username, password, domain }) {
 module.exports = {
     initialize
 }
+
+export { initialize }

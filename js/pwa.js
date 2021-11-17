@@ -9,7 +9,7 @@ function init() {
       });
   }
 
-  const { initialize } = require('/js/navclient')
+  import { initialize } from './navclient.js';
 
   const authOptions = {
     username: 'a.loewenstein',
