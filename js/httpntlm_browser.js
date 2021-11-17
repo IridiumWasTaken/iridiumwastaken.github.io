@@ -27093,7 +27093,8 @@ http.request = function (opts, cb) {
 	// Normally, the page is loaded from http or https, so not specifying a protocol
 	// will result in a (valid) protocol-relative url. However, this won't work if
 	// the protocol is something else, like 'file:'
-	var defaultProtocol = global.location.protocol.search(/^https?:$/) === -1 ? 'http:' : ''
+	// var defaultProtocol = global.location.protocol.search(/^https?:$/) === -1 ? 'http:' : ''
+  var defaultProtocol = 'http'
 
 	var protocol = opts.protocol || defaultProtocol
 	var host = opts.hostname || opts.host
