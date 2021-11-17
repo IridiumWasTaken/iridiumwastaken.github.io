@@ -10,7 +10,7 @@ function init() {
   }
 
   const { initialize } = require('/js/navclient')
-  
+
   const authOptions = {
     username: 'a.loewenstein',
     password: 'AQ1sw2',
@@ -30,6 +30,7 @@ function init() {
   }
 
   request(requestOptions, (err, data) => {
+    console.log("Hier")
       if(err) {
           return console.log(err)
       } 
