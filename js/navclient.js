@@ -1,5 +1,4 @@
-import { httpntlm } from './httpntlm_browser.js';
-
+// import { httpntlm } from './httpntlm_browser.js';
 
 // Send a request to NAV using NTLM authentication.
 // Relies on values stored in environmental variables.
