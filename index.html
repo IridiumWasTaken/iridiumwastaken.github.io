@@ -1,26 +1,27 @@
 <!DOCTYPE html>
 <html lang="de">
   <head>
-    <link rel="manifest" href="/js/pwa.webmanifest">
+    <link rel="manifest" href="/js/pwa.json">
+    <link rel="icon" type="image/png" href="/images/favicon.ico"/>
     <link rel="apple-touch-icon" href="/images/apple-touch.png">
     <link rel="stylesheet" href="/resources/bootstrap-icons-1.7.0/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/style.css">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta charset="UTF-8">
-    <meta name="theme-color" content="#764ABC"/>
+    <meta name="theme-color" content="#000000"/>
     <script src="/js/jquery.min.js"></script>
-    <script type="module" src="/js/httpntlm_browser.js"></script>
-    <script type="module" src="/js/pwa.js"></script>
+    <script src="/js/main.js"></script>
     <script src="/js/status.js"></script>
     <title>Tardis-Scanner App</title>
   </head>
   <body>
     <div id="main">
       <div id="header">
-          <img src="/images/logo.svg" alt="logo" id="logo">
+          <img src="/images/nav_logo.png" alt="logo" id="logo">
           <span id="title">Schleifmaschine</span>
           <i id="settings" class="bi bi-gear-fill"></i>
       </div>
+      <div id="status"></div>
       <div id="content"></div>
       <div id="nav">
           <div id="scan"></div>

@@ -16,7 +16,7 @@ html, body {
 
 #main{
     display: grid;
-    grid-template-rows: 12.5vh 1vh 64vh 10vh 12.5vh;
+    grid-template-rows: 12.5vh 1vh 64vh 22.5vh;
     grid-template-columns: 100%;
 
     width: 100%;
@@ -40,13 +40,13 @@ html, body {
     font-size: 1.4rem;
 }
 
-#settings{
+#close{
     color: black;
     font-size: 2em;
     align-self: center;
 }
 
-#settings:hover{
+#close:hover{
     color: var(--hover_color);
 }
 
@@ -57,11 +57,11 @@ html, body {
 #content{
     grid-column: 1;
     grid-row: 3 / 5;
-    background-color: black;
+    background-color: var(--default-bg-color);
 }
 
-#nav{
-    grid-column: 1;
-    grid-row: 5;
-    background-color: blue;
+#userdata{
+    position: absolute;
+    top: 25%;
+    left: 25%;
 }

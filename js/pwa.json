@@ -5,7 +5,7 @@
   "icons": [
     {
       "src": "/../images/splash-screen.png",
-      "sizes": "512x512",
+      "sizes": "796x525",
       "type": "image/png"
     },
     {
@@ -23,6 +23,6 @@
   ],
   "start_url": "/",
   "display": "standalone",
-  "theme_color": "#764ABC",
-  "background_color": "#764ABC"
+  "theme_color": "#000000",
+  "background_color": "#000000"
 }
