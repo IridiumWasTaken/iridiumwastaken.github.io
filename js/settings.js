@@ -7,6 +7,10 @@ $(function(){
         document.location.href = origin + '/' + mainpath;
     });
 
+    // load username & password
+    get('username').then((val) => $("input[name='uname']").val(val));
+    get('password').then((val) => $("input[name='password']").val(val));
+
     $("#userdata").submit(function(e) {
         e.preventDefault();
         save_password();

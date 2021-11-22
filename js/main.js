@@ -1,9 +1,13 @@
+import { get, set } from '/js/IDB/idb.js';
+
+// init global vars
+var lastText = '';
+var exampleGlassNo = 'S21000077';
+var refractoryPeriod = 1000;
+const API_URL = 'http://172.20.2.10:3001';
+
 $(async function(){
     console.log("DOM loaded");
-
-    // init global vars
-    var lastText = '';
-    var refractoryPeriod = 1000;
 
     // init service workers
     if ('serviceWorker' in navigator) {
@@ -31,37 +35,9 @@ $(async function(){
         document.location.href = origin + '/' + mainpath;
     });
 
-    /*
-    const video = $('#content');
-    let videoTrack = await initCamera(video);
-
-    const canvas = $('#capturedPhoto').get(0);
-    // just for testing
-    let videoHeight = videoTrack.getSettings().height;
-    let videoWidth = videoTrack.getSettings().width;
-    canvas.width = videoWidth/3;
-    canvas.height = videoHeight/3;
-    // real code starts here again
-    const context = canvas.getContext('2d');
-
-    setInterval(() => takePhoto(context, video.get(0), videoWidth, videoHeight), 330);
-    */
-
-    /*$.ajax({
-        type: "POST",
-        url: "http://172.20.2.10:3001/",
-        contentType: 'application/json',
-        data: JSON.stringify({
-            "username": "a.loewenstein",
-            "password": "AQ1sw2",
-            "method": "GET",
-        }),
-        success: function(data, textStatus, xhr) {
-            console.log(data);
-            console.log(textStatus);
-            console.log(xhr.responseText);
-        }
-    })*/
+    // enabling switching to see information about glass pane
+    $('#info').on('click', showInformation);
+    $('#scan').on('click', showScan);
 
     function onScanSuccess(decodedText, decodedResult) {
         // handle the scanned code as you like, for example:
@@ -79,55 +55,56 @@ $(async function(){
         // console.warn(`Code scan error = ${error}`);
     }
 
+    async function showInformation(){
+        html5QrcodeScanner.stop();
+
+        var style = getComputedStyle(document.body);
+        $('#content').html('');
+        $('#content').css('background-color', style.getPropertyValue('--default-bg-color'));
+        $('#content').css('padding-left', '10px');
+        $('#content').css('padding-right', '10px');
+
+        let templateString = await (await fetch('/resources/templates/info.html')).text();
+
+        $('#content').html(templateString);
+
+        let userdata = await getUserData();
+
+        let result = await getGlassInformation(exampleGlassNo, userdata);
+        console.log(result);
+    }
+
+    function showScan(){
+        $('#content').css('background-color', 'black');
+        $('#content').css('padding-left', '');
+        $('#content').css('padding-right', '');
+        html5QrcodeScanner.start({facingMode: {exact: "environment"}}, qrConfig, onScanSuccess, onScanFailure);
+    }
     
 })
 
-async function initCamera(video){
-    if ('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices) {
-        // get current aspect ratio of video player
-        let width = video.width();
-        let height = video.height();
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                audio: false,
-                video: {
-                    minFrameRate: 15,
-                    aspectRatio: width/height,
-                    width: {
-                        min: 500,
-                        ideal: 720
-                    },
-                    heigth: {
-                        min: 500,
-                        ideal: 720
-                    },
-                    facingMode: {
-                        exact: 'environment'
-                    }
-                }
-            });
-            const videoTracks = stream.getVideoTracks();
-            const track = videoTracks[0];
-            console.log(`Getting video from: ${track.label}`);
-            video.get(0).srcObject = stream;
-            video.get(0).play();
-            //The video stream is stopped by track.stop() after 3 second of playback.
-            // setTimeout(() =&gt; { track.stop() }, 3 * 1000)
-            return track;
-        } catch (error) {
-            console.error(`${error.name}`);
-            console.error(error);
-        }
+async function getUserData(){
+    let username = await get('username');
+    let password = await get('password');
+    return {username: username, password: password};
+}
+
+async function getGlassInformation(glassNo, userdata){
+    try {
+        let result = await $.ajax({
+            type: "POST",
+            url: API_URL + '/' + 'companies(8640f26b-f72c-ec11-8122-005056b605fd)/routingLines?$filter=glassNo%20eq%20\'' + glassNo + '\'',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                "username": userdata.username,
+                "password": userdata.password,
+                "method": "GET",
+            })
+        });
+        result = JSON.parse(result);
+        // continue parsing here
+        return result.value;
+    } catch(e){
+        console.error('Error!');
     }
 }
-
-function takePhoto(context, video, width, height){
-    // ommit scaling factor later on
-    context.drawImage(video, 0, 0, width, height, 0, 0, width/3, height/3);
-    var imgData = context.getImageData(0, 0, width, height);
-    // ommit this later on too
-    $('#capturedPhoto').css('position', 'absolute');
-    $('#capturedPhoto').css('z-index', 99);
-    $('#capturedPhoto').show();
-}
-

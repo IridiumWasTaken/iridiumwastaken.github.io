@@ -6,6 +6,7 @@
     --online_bg_color: rgb(30, 201, 30);
     --offline_bg_color: rgb(206, 16, 16);
     --hover_color:#5f5f5f;
+    --highlight_color: red;
 }
 
 html, body {
@@ -70,5 +71,26 @@ html, body {
 #nav{
     grid-column: 1;
     grid-row: 5;
-    background-color: blue;
+    background-color: black;
+
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+}
+
+#nav div{
+    width: 100%;
+    height: 100%;
+    color: white;
+    background-color: black;
+
+    display: flex;
+    justify-content:center;
+    align-items:center;
+    font-size: 2.5rem;
+}
+
+#nav div:active{
+    color: var(--hover_color);
 }

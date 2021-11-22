@@ -12,8 +12,8 @@
     <script src="/js/jquery.min.js"></script>
     <script type="module" src="/js/main.js"></script>
     <script src="/js/status.js"></script>
-    <!-- <script src="/js/scan/adapter-latest.js"></script> -->
-    <script src="js/scan/html5-qrcode.js"></script>
+    <script src="/js/scan/html5-qrcode.js"></script>
+    <script src="/js/handlebar/handlebarjs.min.js"></script>
     <title>Tardis-Scanner App</title>
   </head>
   <body>
@@ -24,13 +24,15 @@
           <i id="settings" class="bi bi-gear-fill"></i>
       </div>
       <div id="status"></div>
-      <!-- <video autoplay id="content"></video> -->
       <div id="content"></div>
       <div id="nav">
-          <div id="scan"></div>
-          <div id="info"></div>
+          <div id="scan">
+            <i class="bi bi-qr-code-scan"></i>
+          </div>
+          <div id="info">
+            <i class="bi bi-info-circle"></i>
+          </div>
       </div>
-      <canvas id="capturedPhoto"></canvas>
   </div>
   </body>
 </html>
