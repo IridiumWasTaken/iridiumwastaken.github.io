@@ -2,18 +2,19 @@ const CACHE_NAME = 'main-cache';
 const toCache = [
   '/',
   '/index.html',
+  '/settings.html',
   '/css/style.css',
   '/css/settings.css',
-  '/js/main.js',
-  '/js/settings.js',
-  '/js/jquery.min.js',
-  '/settings.html',
-  '/js/status.js',
   '/resources/bootstrap-icons-1.7.0/bootstrap-icons.css',
   '/resources/bootstrap-icons-1.7.0/fonts/bootstrap-icons.woff2',
   '/resources/bootstrap-icons-1.7.0/fonts/bootstrap-icons.woff',
   '/images/favicon.ico',
   '/images/nav_logo.png',
+  '/js/main.js',
+  '/js/settings.js',
+  '/js/jquery.min.js',
+  '/js/status.js',
+  '/js/scan/html5-qrcode.js'
 ];
 
 self.addEventListener('install', function(event) {

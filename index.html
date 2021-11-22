@@ -10,9 +10,10 @@
     <meta charset="UTF-8">
     <meta name="theme-color" content="#000000"/>
     <script src="/js/jquery.min.js"></script>
-    <script src="/js/main.js"></script>
+    <script type="module" src="/js/main.js"></script>
     <script src="/js/status.js"></script>
-    <script src="/js/adapter-latest.js"></script>
+    <!-- <script src="/js/scan/adapter-latest.js"></script> -->
+    <script src="js/scan/html5-qrcode.js"></script>
     <title>Tardis-Scanner App</title>
   </head>
   <body>
@@ -23,11 +24,13 @@
           <i id="settings" class="bi bi-gear-fill"></i>
       </div>
       <div id="status"></div>
-      <video autoplay id="content"></video>
+      <!-- <video autoplay id="content"></video> -->
+      <div id="content"></div>
       <div id="nav">
           <div id="scan"></div>
           <div id="info"></div>
       </div>
+      <canvas id="capturedPhoto"></canvas>
   </div>
   </body>
 </html>
