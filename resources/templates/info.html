@@ -1,1 +1,43 @@
 <h2>Information</h2>
+<!-- Error Block -->
+{{#if status}}
+<h3 class="error">{{status}}</h3>
+<p class="error">{{text}}</p>
+<!-- Real Block -->
+{{else}}
+    {{#each this}}
+        {{#if @first}}
+        <table>
+            <tr>
+                <td>Scheibennummer</td>
+                <td>{{glassNo}}</td>
+            </tr>
+            <tr>
+                <td>Verknüpfter Fertigungsauftrag</td>
+                <td>{{prodOrderNo}}</td>
+            </tr>
+        </table>
+        <br>
+        {{/if}}
+    {{/each}}
+    <table>
+        <thead>
+            <tr>
+                <th>Arbeitsschritt</th>
+                <th>Status</th>
+                <th>Startdatum</th>
+                <th>Enddatum</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#each this}}
+            <tr>
+                <td>{{routings description}}</td>
+                <td>{{routingStatus}}</td>
+                <td>{{dateTime startingDateTime}}</td>
+                <td>{{dateTime endingDateTime}}</td>
+            </tr>
+            {{/each}}
+        </tbody>
+    </table>
+{{/if}}
