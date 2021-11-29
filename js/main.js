@@ -1,10 +1,16 @@
-import { get, set } from '/js/IDB/idb.js';
+// Main file responsible for scanning and showing information about scanned glass panes
+
+import { get } from '/js/IDB/idb.js';
 
 // init global vars
 var lastText = '';
+var lastGlassNo = '';
+var lastTextType = '';
 var exampleGlassNo = 'S21000077';
-var refractoryPeriod = 1000;
-const API_URL = 'http://172.20.2.10:3001';
+var refractoryPeriod = 5000;
+const API_URL = 'https://172.20.2.10:3001';
+const API_TIMEOUT = 2000;
+const glassRegexp = /(?:S:(S{1}\d+))/g;
 var user = undefined;
 
 const notLoggedInText = "Sie sind nicht angemeldet. Bitte melden Sie sich an.";
@@ -52,8 +58,9 @@ $(async function(){
     let contentHeight = $('#content').height();
     let contentWidth = $('#content').width();
     let maxWidth = 0.9 * Math.min(contentWidth, contentHeight);
+    // let maxWidth = 150;
     const html5QrcodeScanner = new Html5Qrcode("content");
-    const qrConfig = { fps: 3, qrbox: {width: maxWidth, height: maxWidth}, verbose: true, aspectRatio: contentWidth/contentHeight};
+    const qrConfig = { fps: 3, qrbox: {width: maxWidth, height: maxWidth}, verbose: true, aspectRatio: contentHeight/contentWidth};
 
     html5QrcodeScanner.start({facingMode: {exact: "environment"}}, qrConfig, onScanSuccess, onScanFailure);
 
@@ -69,13 +76,32 @@ $(async function(){
     $('#scan').on('click', showScan);
 
     function onScanSuccess(decodedText, decodedResult) {
-        // handle the scanned code as you like, for example:
-        if (lastText != decodedText){
-            console.log(`Code matched = ${decodedText}`, decodedResult);
-            lastText = decodedText;
-            html5QrcodeScanner.pause();
-            setTimeout(html5QrcodeScanner.resume(), refractoryPeriod);
-        }
+        html5QrcodeScanner.pause();
+        console.log(`Code matched = ${decodedText}`, decodedResult);
+        lastText = decodedText;
+        try {
+            if (glassRegexp.test(lastText)) {
+                glassRegexp.lastIndex = 0;
+                let tmp = glassRegexp.exec(lastText);
+                lastGlassNo = tmp[1];
+                lastTextType = 'Glass';
+                $(`<div id="scan-alert"><span>Gescannter Code: ${lastText}</span></div>`).appendTo("#content");
+                vibrate();
+                setTimeout(() => {
+                    html5QrcodeScanner.resume();
+                    $('#scan-alert').remove()}, 
+                    refractoryPeriod);
+            } else {
+                $(`<div id="scan-alert"><span>Gescannter Code: Ungültig</span></div>`).appendTo("#content");
+                setTimeout(() => {
+                    html5QrcodeScanner.resume();
+                    $('#scan-alert').remove()}, 
+                    refractoryPeriod);
+            } 
+        } catch(e){
+            html5QrcodeScanner.resume();
+            $('#scan-alert').remove();
+        }                
     }
       
     function onScanFailure(error) {
@@ -98,9 +124,9 @@ $(async function(){
         $('#content').css('padding-left', '10px');
         $('#content').css('padding-right', '10px');
 
-        let templateString = await (await fetch('/resources/templates/info.html')).text();
+        let templateString = await (await fetch('/resources/templates/glass_info.html')).text();
 
-        let result = await getGlassInformation(exampleGlassNo, user);
+        let result = await getGlassInformation(lastGlassNo, user);
         console.log(result);
 
         let template = Handlebars.compile(templateString);
@@ -134,7 +160,7 @@ async function getUserData(){
 
 async function getGlassInformation(glassNo, userdata){
     try {
-        let result = await $.ajax({
+        let result1 = await $.ajax({
             type: "POST",
             url: API_URL + '/' + 'companies(8640f26b-f72c-ec11-8122-005056b605fd)/routingLines?$filter=glassNo%20eq%20\'' + glassNo + '\'',
             contentType: 'application/json',
@@ -142,12 +168,31 @@ async function getGlassInformation(glassNo, userdata){
                 "username": userdata.username,
                 "password": userdata.password,
                 "method": "GET",
-            })
+            }),
+            timeout: API_TIMEOUT
         });
-        result = JSON.parse(result);
+        let result2 = await $.ajax({
+            type: "POST",
+            url: API_URL + '/' + 'companies(8640f26b-f72c-ec11-8122-005056b605fd)/glassTracking(\'' + glassNo + '\')',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                "username": userdata.username,
+                "password": userdata.password,
+                "method": "GET",
+            }),
+            timeout: API_TIMEOUT
+        });
+        result1 = JSON.parse(result1);
+        result2 = JSON.parse(result2);
+
+        result1.value['rack'] = result2.rack;
         // continue parsing here
-        return result.value;
+        return result1.value;
     } catch(e){
         return {"status": e.status, "text": e.statusText};
     }
+}
+
+function vibrate(){
+    navigator.vibrate(500);
 }
