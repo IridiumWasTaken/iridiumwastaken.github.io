@@ -1,16 +1,30 @@
 // Main file responsible for scanning and showing information about scanned glass panes
 
 import { get } from '/js/IDB/idb.js';
+import { LastScan } from '/js/lastscan.js';
 
 // init global vars
-var lastText = '';
-var lastGlassNo = '';
-var lastTextType = '';
-var exampleGlassNo = 'S21000077';
-var refractoryPeriod = 5000;
 const API_URL = 'https://172.20.2.10:3001';
 const API_TIMEOUT = 2000;
 const glassRegexp = /(?:S:(S{1}\d+))/g;
+const rackRegexp = /(?:R:([^\s]+)(?:\s{1}#{1}(\d+))?)/gs;
+const MAX_HISTORY_LENGTH = 10;
+
+var lastScan = new LastScan(MAX_HISTORY_LENGTH);
+var lastGlass = {
+    type: "Glass",
+    no: ''
+};
+var lastRack = {
+    type: "Rack",
+    no: '',
+    name: '',
+    operationNo: undefined,
+};
+
+var allRacks = undefined;
+var exampleGlassNo = 'S21000077';
+var refractoryPeriod = 5000;
 var user = undefined;
 
 const notLoggedInText = "Sie sind nicht angemeldet. Bitte melden Sie sich an.";
@@ -35,6 +49,14 @@ Handlebars.registerHelper('routings', function(aString){
     return aString.replace("Glas ", '');
 });
 
+Handlebars.registerHelper('ifEquals', function(a, b, options) {
+    if (a === b) {
+      return options.fn(this);
+    }
+  
+    return options.inverse(this);
+  });
+
 // init service workers
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/service-worker.js')
@@ -53,6 +75,11 @@ $(async function(){
     if (user === undefined){
         alert(notLoggedInText);
     }
+
+    const scanPopupString = await (await fetch('/resources/templates/scan-popup.html')).text();
+    const glassInfoString = await (await fetch('/resources/templates/glass_info.html')).text();
+    const scanPopupTemplate = Handlebars.compile(scanPopupString);
+    const glassInfoTemplate = Handlebars.compile(glassInfoString);
 
     // init camera
     let contentHeight = $('#content').height();
@@ -75,22 +102,68 @@ $(async function(){
     $('#info').on('click', showInformation);
     $('#scan').on('click', showScan);
 
-    function onScanSuccess(decodedText, decodedResult) {
+    // get information about all racks
+    allRacks = await getAllRacks();
+
+    async function onScanSuccess(decodedText, decodedResult) {
         html5QrcodeScanner.pause();
         console.log(`Code matched = ${decodedText}`, decodedResult);
-        lastText = decodedText;
+        lastScan.text = decodedText;
+        lastScan.result = decodedResult;
         try {
-            if (glassRegexp.test(lastText)) {
-                glassRegexp.lastIndex = 0;
-                let tmp = glassRegexp.exec(lastText);
-                lastGlassNo = tmp[1];
-                lastTextType = 'Glass';
-                $(`<div id="scan-alert"><span>Gescannter Code: ${lastText}</span></div>`).appendTo("#content");
+            if (glassRegexp.test(lastScan.text)) {
+
+                resetRegexpIndices();
+                let tmp = glassRegexp.exec(lastScan.text);
+                lastGlass.no = tmp[1];
+                lastScan.unshift(lastGlass);
+                resetRegexpIndices();
+
+                let postingResponse = await postingCases();
+                postingResponse.text = lastScan.text;
+
+                // GUI stuff
+                let scanPopup = scanPopupTemplate(postingResponse);
+                $(scanPopup).appendTo("#content");
                 vibrate();
                 setTimeout(() => {
                     html5QrcodeScanner.resume();
                     $('#scan-alert').remove()}, 
                     refractoryPeriod);
+
+            } else if (rackRegexp.test(lastScan.text)) {
+
+                resetRegexpIndices();
+                let tmp = rackRegexp.exec(lastScan.text);
+                lastRack.no = tmp[1];
+                try {
+                    lastRack.operationNo = tmp[2];
+                } catch(e){
+                    lastRack.operationNo = undefined;
+                }
+                lastRack.name = await getNameFromRackNo(lastRack.no);
+                lastScan.unshift(lastRack);
+                resetRegexpIndices();
+
+                let postingResponse = await postingCases();
+                postingResponse.text = lastScan.text;
+
+                // GUI stuff
+                if (lastRack.name != '' || lastRack.name != undefined) {
+                    $('#title').text(lastRack.name);
+                } else {
+                    $('#title').text(lastRack.no);
+                }
+        
+                let scanPopup = scanPopupTemplate(postingResponse);
+                $(scanPopup).appendTo("#content");
+                vibrate();
+                setTimeout(() => {
+                    html5QrcodeScanner.resume();
+                    $('#scan-alert').remove()}, 
+                    refractoryPeriod);
+
+
             } else {
                 $(`<div id="scan-alert"><span>Gescannter Code: Ungültig</span></div>`).appendTo("#content");
                 setTimeout(() => {
@@ -124,15 +197,40 @@ $(async function(){
         $('#content').css('padding-left', '10px');
         $('#content').css('padding-right', '10px');
 
-        let templateString = await (await fetch('/resources/templates/glass_info.html')).text();
-
-        let result = await getGlassInformation(lastGlassNo, user);
+        let result = await getGlassInformation(lastGlass.no);
         console.log(result);
+        if (!result || result == [] || result.length == 0){
+            result = {
+                "status": "Keine Information",
+                "text": "Keine Information zu dieser Glasscheibe gefunden." 
+            };
+        }
 
-        let template = Handlebars.compile(templateString);
-        let DOMElement = template(result);
+        // replace rack code by description if there is a description
+        if (!allRacks){
+            allRacks = await getAllRacks();
+        }
+        if ('rack' in result && result['rack'] != ''){
+            allRacks.foreach(function(element){
+                if ("code" in element && element['code'] == result['rack'] && "name" in element){
+                    result['rack'] = element['name'];
+                }
+            });
+        }
+
+        let DOMElement = glassInfoTemplate(result);
 
         $('#content').html(DOMElement);
+        $('#trash').click(async function(){
+            if (confirm("Diese Scheibe wirklich als Ausschuss melden?")){
+                let res = await trashGlass(lastGlass.no);
+                res.text = '';
+                let popup = scanPopupTemplate(res);
+                $(popup).appendTo('#content');
+
+                setTimeout(() => $('#scan-alert').remove(), 4000);
+            }
+        });
     }
 
     function showScan(){
@@ -158,15 +256,15 @@ async function getUserData(){
     }
 }
 
-async function getGlassInformation(glassNo, userdata){
+async function getGlassInformation(glassNo){
     try {
         let result1 = await $.ajax({
             type: "POST",
             url: API_URL + '/' + 'companies(8640f26b-f72c-ec11-8122-005056b605fd)/routingLines?$filter=glassNo%20eq%20\'' + glassNo + '\'',
             contentType: 'application/json',
             data: JSON.stringify({
-                "username": userdata.username,
-                "password": userdata.password,
+                "username": user.username,
+                "password": user.password,
                 "method": "GET",
             }),
             timeout: API_TIMEOUT
@@ -176,8 +274,8 @@ async function getGlassInformation(glassNo, userdata){
             url: API_URL + '/' + 'companies(8640f26b-f72c-ec11-8122-005056b605fd)/glassTracking(\'' + glassNo + '\')',
             contentType: 'application/json',
             data: JSON.stringify({
-                "username": userdata.username,
-                "password": userdata.password,
+                "username": user.username,
+                "password": user.password,
                 "method": "GET",
             }),
             timeout: API_TIMEOUT
@@ -190,6 +288,184 @@ async function getGlassInformation(glassNo, userdata){
         return result1.value;
     } catch(e){
         return {"status": e.status, "text": e.statusText};
+    }
+}
+
+async function updateGlassRack(glassNo, rackCode){
+    try {
+        let result = await $.ajax({
+            type: "POST",
+            url: API_URL + '/' + 'companies(8640f26b-f72c-ec11-8122-005056b605fd)/glassTracking(\'' + glassNo + '\')/Microsoft.NAV.update',
+            contentType: "application/json",
+            data: JSON.stringify({
+                "username": user.username,
+                "password": user.password,
+                "method": "POST",
+                "body": {"rack": rackCode},
+            }),
+            timeout: API_TIMEOUT
+        });
+        return JSON.parse(result).value;
+    } catch(e){
+        return {"status": e.status, "text": e.statusText};
+    }
+}
+
+function operationInProgress(glassInfo){
+    if (!glassInfo){ return undefined; };
+    glassInfo.foreach(function(operation){
+        if (operation.routingStatus == "In Bearbeitung"){
+            return operation.operationNo;
+        }
+    });
+    return false;
+}
+
+async function getAllRacks(){
+    try{
+        let result = await $.ajax({
+            type: "POST",
+            url: API_URL + '/' + 'companies(8640f26b-f72c-ec11-8122-005056b605fd)/glassRacks',
+            contentType: "application/json",
+            data: JSON.stringify({
+                "username": user.username,
+                "password": user.password,
+                "method": "GET",
+            }),
+            timeout: 5000,
+        });
+        result = JSON.parse(result);
+        return result.value;
+    } catch(e) {
+        return undefined;
+    }
+}
+
+async function getNameFromRackNo(rackNo){
+    if (!allRacks){
+        allRacks = await getAllRacks();
+    }
+    if (!allRacks){
+        return undefined;
+    }
+    for (let i = 0; i < allRacks.length; i++){
+        let element = allRacks[i];
+        if ("code" in element && "name" in element && element["code"] == rackNo && element["name"] != ''){
+            return element["name"];
+        }
+    }
+    return "Unbekannter Bock";
+}
+
+async function trashGlass(glassNo){
+    // TODO: Make sure that you don't trash the same glass twice in a row
+    let glassInfo = await getGlassInformation(glassNo);
+    if (!glassInfo) {
+        return {status: "error", code: "Fehler bei der Abfrage der Glasinformationen."};
+    }
+    if ("status" in glassInfo) {
+        return {status: "error", code: glassInfo["status"].toString() + "\n" + glassInfo.text};
+    }
+    return await handleOperation(glassInfo, 10, "trash"); 
+}
+
+async function handleOperation(glassInfo, operationNo, type){
+    // glassInfo: object gotten from routingLine API endpoint
+    // operationNo: no of operation to start / end
+    // type: "start", "finish"
+    if (!glassInfo || !operationNo || !type){ return {status: "error", "code": "Parameter für Arbeitsgangstart/Ende fehlt."}};
+    let prodOrderNo = glassInfo[0].prodOrderNo;
+    let routingReferenceNo = glassInfo[0].routingReferenceNo;
+    let routingNo = glassInfo[0].routingNo;
+    try {
+        let result = await $.ajax({
+            type: "POST",
+            url: API_URL + '/' + 'companies(8640f26b-f72c-ec11-8122-005056b605fd)/routingLines(\'Released\', \'' + prodOrderNo +'\', ' + routingReferenceNo + ', \'' + routingNo + '\',\'' + operationNo + '\')/Microsoft.NAV.' + type,
+            contentType: 'application/json',
+            data: JSON.stringify({
+                "username": userdata.username,
+                "password": userdata.password,
+                "method": "POST",
+            }),
+            timeout: API_TIMEOUT
+        });
+        result = JSON.parse(result);
+        if (result.value == "Erfolg"){
+            if (type == "start"){
+                return {status: "success", code: "Arbeitsgang erfolgreich gestartet."};
+            } else if (type == "finish"){
+                return {status: "success", code: "Arbeitsgang erfolgreich beendet."};
+            } else if (type == "trash") {
+                return {status: "success", code: "Scheibe erfolgreich als Ausschuss gemeldet."};
+            }
+        } else {
+            return {status: "error", code: result.value};
+        }
+    } catch(e){
+        return {status: "error", code: e.statusText};
+    }
+}
+
+async function startOperation(glassInfo, operationNo){
+    return await handleOperation(glassInfo, operationNo, "start");
+}
+
+async function endOperation(glassInfo, operationNo){
+    return await handleOperation(glassInfo, operationNo, "finish");
+}
+
+function resetRegexpIndices(){
+    glassRegexp.lastIndex = 0;
+    rackRegexp.lastIndex = 0;
+}
+
+async function postingCases(){
+    let status = {"status": "error", "code": "Der Standardtext wurde nicht zurückgesetzt"};
+    if (lastScan.scans && lastScan.scans != []){
+        // make sure that last scan is not a machine or rack --> nothing to do if it is
+        if (lastScan.get(0).type == "Rack"){
+            return {status: "success",
+                    code: "Bock/Maschine wurde erfolgreich gescannt."};
+        }
+        // we've got a glass. Make sure a rack has been scanned previously
+        if (lastRack && lastRack.no != ''){
+            // update the location of the glass pane
+            let res = await updateGlassRack(lastScan.get(0).no, lastRack.no);
+            if (!res){
+                return {status: 'error', code: "Fehler beim Updaten des Glasstandorts."}; 
+            }
+            if ("status" in res){
+                return {status: "error", code: res.status.toString() + "\n" + res.text};
+            }
+            // check whether the glass has an ongoing operation --> end it
+            let glassInfo = await getGlassInformation(lastScan.no);
+            if (!glassInfo) {
+                return {status: "error", code: "Fehler bei der Abfrage der Glasinformationen."};
+            }
+            if ("status" in glassInfo) {
+                return {status: "error", code: glassInfo["status"].toString() + "\n" + glassInfo.text};
+            }
+            let currentGlassOperation = operationInProgress(glassInfo);
+            if (currentGlassOperation){
+                // glass is currently being processed
+                if (lastRack.operationNo == currentGlassOperation){
+                    return {status: "success", code: "Arbeitsgang wurde bereits gestartet, daher keine Änderung."};
+                }
+
+                // we've scanned a rack, not a machine --> end operation
+                let res2 = endOperation(glassInfo, currentGlassOperation);
+
+                // we've scanned a machine --> end previous operation & start new one
+                if (lastRack.operationNo && res.status == "success"){
+                    // start new operation
+                    let res3 = startOperation(glassInfo, lastRack.operationNo);
+                    return res3;
+                }
+                return res2;
+            }
+            return {status: "success", code: "Glasscheibenstandort wurde erfolgreich geändert."};
+        }
+        return {status: "success", code: "Aktuell ist keine Maschine/kein Bock aktiv. Glasscheibe wurde erfasst."};
     }
 }
 

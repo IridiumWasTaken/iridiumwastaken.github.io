@@ -1,0 +1,9 @@
+{{#ifEquals status "error"}}
+<div id="scan-alert" class="error-bg">
+{{else}}
+<div id="scan-alert">
+{{/ifEquals}}
+    <span>Gescannter Code: {{text}}</span><br>
+    <span>{{status}}</span><br>
+    <span>{{code}}</span>
+</div>
