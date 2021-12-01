@@ -44,7 +44,7 @@ html, body {
 
 #settings{
     color: black;
-    font-size: 2em;
+    font-size: 2rem;
     align-self: center;
 }
 
@@ -106,7 +106,7 @@ html, body {
 }
 
 table{
-    font-size: 1rem;
+    font-size: 0.6rem;
     width: 94%;
 }
 
