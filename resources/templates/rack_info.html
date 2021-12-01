@@ -2,7 +2,12 @@
 <!-- Error Block -->
 {{#if status}}
 <h3 class="error">{{status}}</h3>
+{{#if code}}
+<p class="error">{{code}}</p>
+{{/if}}
+{{#if text}}
 <p class="error">{{text}}</p>
+{{/if}}
 <!-- Real Block -->
 {{else}}
 <p>Scheiben auf diesem Bock</p>

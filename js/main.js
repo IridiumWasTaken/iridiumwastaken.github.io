@@ -251,13 +251,15 @@ $(async function(){
         $('#content').html(DOMElement);
         $('#trash').click(async function(){
             if (confirm("Diese Scheibe wirklich als Ausschuss melden?")){
-                let res = await trashGlass(lastGlass.no);
-                res.text = '';
+                glassNoToScrap = lastGlass.no;
+                tmplastGlassCopy = lastGlass;
                 lastGlass = {
                     type: "Glass",
                     no: ''
                 };
                 del('lastGlass');
+                let res = await trashGlass(glassNoToScrap);
+                res.text = '';
                 let popup = scanPopupTemplate(res);
                 $(popup).appendTo('#content');
 
