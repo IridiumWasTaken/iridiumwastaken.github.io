@@ -211,7 +211,7 @@ $(async function(){
             allRacks = await getAllRacks();
         }
         if ('rack' in result && result['rack'] != ''){
-            allRacks.foreach(function(element){
+            allRacks.forEach(function(element){
                 if ("code" in element && element['code'] == result['rack'] && "name" in element){
                     result['rack'] = element['name'];
                 }
@@ -301,23 +301,29 @@ async function updateGlassRack(glassNo, rackCode){
                 "username": user.username,
                 "password": user.password,
                 "method": "POST",
-                "body": {"rack": rackCode},
+                "body": {"rack": rackCode }
             }),
             timeout: API_TIMEOUT
         });
-        return JSON.parse(result).value;
+        let tmp = JSON.parse(result);
+        if (tmp.value == "Erfolg"){
+            return {status: "success"}
+        } else {
+            return {status: "error", code: "Fehler beim Updaten der Glasscheibenposition."};
+        }
     } catch(e){
-        return {"status": e.status, "text": e.statusText};
+        return {"status": e.status, "code": e.statusText};
     }
 }
 
 function operationInProgress(glassInfo){
     if (!glassInfo){ return undefined; };
-    glassInfo.foreach(function(operation){
+    for (let i = 0; i < glassInfo.length; i++){
+        let operation = glassInfo[i];
         if (operation.routingStatus == "In Bearbeitung"){
             return operation.operationNo;
         }
-    });
+    }
     return false;
 }
 
@@ -366,7 +372,7 @@ async function trashGlass(glassNo){
     if ("status" in glassInfo) {
         return {status: "error", code: glassInfo["status"].toString() + "\n" + glassInfo.text};
     }
-    return await handleOperation(glassInfo, 10, "trash"); 
+    return await handleOperation(glassInfo, 10, "scrap"); 
 }
 
 async function handleOperation(glassInfo, operationNo, type){
@@ -383,8 +389,8 @@ async function handleOperation(glassInfo, operationNo, type){
             url: API_URL + '/' + 'companies(8640f26b-f72c-ec11-8122-005056b605fd)/routingLines(\'Released\', \'' + prodOrderNo +'\', ' + routingReferenceNo + ', \'' + routingNo + '\',\'' + operationNo + '\')/Microsoft.NAV.' + type,
             contentType: 'application/json',
             data: JSON.stringify({
-                "username": userdata.username,
-                "password": userdata.password,
+                "username": user.username,
+                "password": user.password,
                 "method": "POST",
             }),
             timeout: API_TIMEOUT
@@ -395,7 +401,7 @@ async function handleOperation(glassInfo, operationNo, type){
                 return {status: "success", code: "Arbeitsgang erfolgreich gestartet."};
             } else if (type == "finish"){
                 return {status: "success", code: "Arbeitsgang erfolgreich beendet."};
-            } else if (type == "trash") {
+            } else if (type == "scrap") {
                 return {status: "success", code: "Scheibe erfolgreich als Ausschuss gemeldet."};
             }
         } else {
@@ -434,11 +440,11 @@ async function postingCases(){
             if (!res){
                 return {status: 'error', code: "Fehler beim Updaten des Glasstandorts."}; 
             }
-            if ("status" in res){
-                return {status: "error", code: res.status.toString() + "\n" + res.text};
+            if (res.status == "error"){
+                return res;
             }
             // check whether the glass has an ongoing operation --> end it
-            let glassInfo = await getGlassInformation(lastScan.no);
+            let glassInfo = await getGlassInformation(lastGlass.no);
             if (!glassInfo) {
                 return {status: "error", code: "Fehler bei der Abfrage der Glasinformationen."};
             }
@@ -453,15 +459,13 @@ async function postingCases(){
                 }
 
                 // we've scanned a rack, not a machine --> end operation
-                let res2 = endOperation(glassInfo, currentGlassOperation);
-
-                // we've scanned a machine --> end previous operation & start new one
-                if (lastRack.operationNo && res.status == "success"){
-                    // start new operation
-                    let res3 = startOperation(glassInfo, lastRack.operationNo);
-                    return res3;
-                }
-                return res2;
+                let res2 = await endOperation(glassInfo, currentGlassOperation);
+            }
+            // we've scanned a machine --> end previous operation & start new one
+            if (lastRack.operationNo && res.status == "success"){
+                // start new operation
+                let res3 = await startOperation(glassInfo, lastRack.operationNo);
+                return res3;
             }
             return {status: "success", code: "Glasscheibenstandort wurde erfolgreich geändert."};
         }
