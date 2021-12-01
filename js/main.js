@@ -105,6 +105,10 @@ $(async function(){
     // get information about all racks
     allRacks = await getAllRacks();
 
+    // color the scan button
+    var style = getComputedStyle(document.body);
+    $('.bi-qr-code-scan').css('color', style.getPropertyValue('--online_bg_color'));
+
     async function onScanSuccess(decodedText, decodedResult) {
         html5QrcodeScanner.pause();
         console.log(`Code matched = ${decodedText}`, decodedResult);
@@ -191,11 +195,12 @@ $(async function(){
 
         html5QrcodeScanner.stop();
 
-        var style = getComputedStyle(document.body);
         $('#content').html('');
         $('#content').css('background-color', style.getPropertyValue('--default-bg-color'));
         $('#content').css('padding-left', '10px');
         $('#content').css('padding-right', '10px');
+        $('.bi-qr-code-scan').css('color', 'white');
+        $('.bi-info-circle').css('color', style.getPropertyValue('--online_bg_color'));
 
         let result = await getGlassInformation(lastGlass.no);
         console.log(result);
@@ -237,6 +242,8 @@ $(async function(){
         $('#content').css('background-color', 'black');
         $('#content').css('padding-left', '');
         $('#content').css('padding-right', '');
+        $('.bi-info-circle').css('color', 'white');
+        $('.bi-qr-code-scan').css('color', style.getPropertyValue('--online_bg_color'));
         html5QrcodeScanner.start({facingMode: {exact: "environment"}}, qrConfig, onScanSuccess, onScanFailure);
     }
     
