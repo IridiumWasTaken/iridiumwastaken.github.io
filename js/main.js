@@ -1,6 +1,6 @@
 // Main file responsible for scanning and showing information about scanned glass panes
 
-import { get, set } from '/js/IDB/idb.js';
+import { get, set, del } from '/js/IDB/idb.js';
 import { LastScan } from '/js/lastscan.js';
 
 // init global vars
@@ -116,6 +116,9 @@ $(async function(){
     $('#scan').on('click', showScan);
     $('#rack-info').on('click', showRackInformation);
 
+    // enable deleting the current rack
+    $('#delete-rack').on('click', deleteCurrentRack);
+
     // get information about all racks
     allRacks = await getAllRacks();
 
@@ -208,7 +211,11 @@ $(async function(){
             return;
         }
 
-        html5QrcodeScanner.stop();
+        try {
+            html5QrcodeScanner.stop();
+        } catch(e){
+
+        }
 
         $('#content').html('');
         $('#content').css('background-color', style.getPropertyValue('--default-bg-color'));
@@ -260,7 +267,11 @@ $(async function(){
             return;
         }
 
-        html5QrcodeScanner.stop();
+        try {
+            html5QrcodeScanner.stop();
+        } catch (e){
+
+        }
 
         $('#content').html('');
         $('#content').css('background-color', style.getPropertyValue('--default-bg-color'));
@@ -418,6 +429,9 @@ async function getNameFromRackNo(rackNo){
 }
 
 async function getAllGlassNosPerRack(rackCode){
+    if (!rackCode){
+        return [];
+    }
     try {
         let result = await $.ajax({
             type: "POST",
@@ -431,8 +445,8 @@ async function getAllGlassNosPerRack(rackCode){
             timeout: API_TIMEOUT
         });
         let tmp = JSON.parse(result);
-        if (value in tmp){
-            return value;
+        if (tmp.value){
+            return tmp.value;
         }
         return {status: error, code: "Fehler beim Abfragen der Information zu diesem Bock."};
     } catch(e){
@@ -555,9 +569,23 @@ function vibrate(){
 }
 
 function setRackTitle(rack){
+    if (!rack){
+        $('#title').text("Keine Maschine/Bock");
+    }
     if (rack.name != '' || rack.name != undefined) {
         $('#title').text(rack.name);
     } else {
         $('#title').text(rack.no);
     }
+}
+
+function deleteCurrentRack(){
+    lastRack = {
+        type: "Rack",
+        no: '',
+        name: '',
+        operationNo: undefined,
+    };
+    del('lastRack');
+    setRackTitle();
 }

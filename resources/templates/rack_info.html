@@ -4,9 +4,11 @@
 <h3 class="error">{{status}}</h3>
 <p class="error">{{text}}</p>
 <!-- Real Block -->
+{{else}}
 <p>Scheiben auf diesem Bock</p>
 <ul>
-    {{#each}}
+    {{#each this}}
     <li>{{glassNo}}</li>
     {{/each}}
 </ul>
+{{/if}}

@@ -37,9 +37,19 @@ html, body {
     justify-content: space-between;
 }
 
+#logo{
+    height: 80%;
+    align-self: center;
+}
+
 #title{
     align-self: center;
     font-size: 1.4rem;
+}
+
+#delete-rack{
+    align-self: center;
+    font-size: 2rem;
 }
 
 #settings{
