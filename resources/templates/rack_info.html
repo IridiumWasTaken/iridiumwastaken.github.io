@@ -1,0 +1,12 @@
+<h2>Information</h2>
+<!-- Error Block -->
+{{#if status}}
+<h3 class="error">{{status}}</h3>
+<p class="error">{{text}}</p>
+<!-- Real Block -->
+<p>Scheiben auf diesem Bock</p>
+<ul>
+    {{#each}}
+    <li>{{glassNo}}</li>
+    {{/each}}
+</ul>

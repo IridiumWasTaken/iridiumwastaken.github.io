@@ -89,8 +89,10 @@ $(async function(){
    
     const scanPopupString = await (await fetch('/resources/templates/scan-popup.html')).text();
     const glassInfoString = await (await fetch('/resources/templates/glass_info.html')).text();
+    const rackInfoString = await (await fetch('/resources/templates/rack_info.html')).text();
     const scanPopupTemplate = Handlebars.compile(scanPopupString);
     const glassInfoTemplate = Handlebars.compile(glassInfoString);
+    const rackInfoTemplate = Handlebars.compile(rackInfoString);
 
     // init camera
     let contentHeight = $('#content').height();
@@ -109,9 +111,10 @@ $(async function(){
         document.location.href = origin + '/' + mainpath;
     });
 
-    // enabling switching to see information about glass pane
-    $('#info').on('click', showInformation);
+    // enabling switching to see information about glass panes & the current rack
+    $('#glass-info').on('click', showGlassInformation);
     $('#scan').on('click', showScan);
+    $('#rack-info').on('click', showRackInformation);
 
     // get information about all racks
     allRacks = await getAllRacks();
@@ -199,7 +202,7 @@ $(async function(){
         // console.warn(`Code scan error = ${error}`);
     }
 
-    async function showInformation(){
+    async function showGlassInformation(){
         if (user === undefined){
             alert(notLoggedInText);
             return;
@@ -212,7 +215,8 @@ $(async function(){
         $('#content').css('padding-left', '10px');
         $('#content').css('padding-right', '10px');
         $('.bi-qr-code-scan').css('color', 'white');
-        $('.bi-info-circle').css('color', style.getPropertyValue('--online_bg_color'));
+        $('#rack-info').css('color', 'white');
+        $('#glass-info').css('color', style.getPropertyValue('--online_bg_color'));
 
         let result = await getGlassInformation(lastGlass.no);
         console.log(result);
@@ -250,11 +254,42 @@ $(async function(){
         });
     }
 
+    async function showRackInformation(){
+        if (user === undefined){
+            alert(notLoggedInText);
+            return;
+        }
+
+        html5QrcodeScanner.stop();
+
+        $('#content').html('');
+        $('#content').css('background-color', style.getPropertyValue('--default-bg-color'));
+        $('#content').css('padding-left', '10px');
+        $('#content').css('padding-right', '10px');
+        $('.bi-qr-code-scan').css('color', 'white');
+        $('#rack-info').css('color', style.getPropertyValue('--online_bg_color'));
+        $('#glass-info').css('color', 'white');
+
+        let result = await getAllGlassNosPerRack(lastRack.no);
+        console.log(result);
+        if (!result || result == [] || result.length == 0){
+            result = {
+                "status": "Keine Information",
+                "text": "Keine Scheiben auf diesem Bock gefunden", 
+            };
+        }
+
+        let DOMElement = rackInfoTemplate(result);
+
+        $('#content').html(DOMElement);
+    }
+
     function showScan(){
         $('#content').css('background-color', 'black');
         $('#content').css('padding-left', '');
         $('#content').css('padding-right', '');
-        $('.bi-info-circle').css('color', 'white');
+        $('#glass-info').css('color', 'white');
+        $('#rack-info').css('color', 'white');
         $('.bi-qr-code-scan').css('color', style.getPropertyValue('--online_bg_color'));
         html5QrcodeScanner.start({facingMode: {exact: "environment"}}, qrConfig, onScanSuccess, onScanFailure);
     }
@@ -380,6 +415,29 @@ async function getNameFromRackNo(rackNo){
         }
     }
     return "Unbekannter Bock";
+}
+
+async function getAllGlassNosPerRack(rackCode){
+    try {
+        let result = await $.ajax({
+            type: "POST",
+            url: API_URL + '/' + 'companies(8640f26b-f72c-ec11-8122-005056b605fd)/glassTracking?$filter=rack eq \'' + rackCode + '\'',
+            contentType: "application/json",
+            data: JSON.stringify({
+                "username": user.username,
+                "password": user.password,
+                "method": "GET",
+            }),
+            timeout: API_TIMEOUT
+        });
+        let tmp = JSON.parse(result);
+        if (value in tmp){
+            return value;
+        }
+        return {status: error, code: "Fehler beim Abfragen der Information zu diesem Bock."};
+    } catch(e){
+        return {"status": "error", "code": e.status + "\n" + e.statusText};
+    }
 }
 
 async function trashGlass(glassNo){

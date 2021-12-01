@@ -10,6 +10,7 @@ const toCache = [
   '/resources/bootstrap-icons-1.7.0/fonts/bootstrap-icons.woff',
   '/resources/templates/glass_info.html',
   '/resources/templates/scan-popup.html',
+  '/resources/templates/rack_info.html',
   '/images/favicon.ico',
   '/images/nav_logo.png',
   '/js/main.js',
