@@ -1,3 +1,4 @@
+const API_PORT = 3001;
 const CACHE_NAME = 'main-cache';
 const toCache = [
   '/',
@@ -35,18 +36,23 @@ self.addEventListener('install', function(event) {
 })
 
 self.addEventListener('fetch', function(event) {
-  event.respondWith(
-    fetch(event.request)
-      .catch(() => {
-        return caches.open(CACHE_NAME)
-          .then((cache) => {
-            console.log("Trying to get");
-            console.log(event.request);
-            console.log("from cache.");
-            return cache.match(event.request, {ignoreSearch: true})
-          })
-      })
-  )
+  let url = new URL(event.request.url);
+  if (url.port == API_PORT){
+    event.respondWith(fetch(event.request))
+  } else {
+    event.respondWith(
+      fetch(event.request)
+        .catch(() => {
+          return caches.open(CACHE_NAME)
+            .then((cache) => {
+              console.log("Trying to get");
+              console.log(event.request);
+              console.log("from cache.");
+              return cache.match(event.request, {ignoreSearch: true})
+            })
+        })
+    )
+  }
 })
 
 self.addEventListener('activate', function(event) {

@@ -463,7 +463,13 @@ async function trashGlass(glassNo){
     if ("status" in glassInfo) {
         return {status: "error", code: glassInfo["status"].toString() + "\n" + glassInfo.text};
     }
-    return await handleOperation(glassInfo, 10, "scrap"); 
+    let res = await handleOperation(glassInfo, 10, "scrap"); 
+    lastGlass = {
+        type: "Glass",
+        no: ''
+    };
+    del('lastGlass');
+    return res;
 }
 
 async function handleOperation(glassInfo, operationNo, type){
@@ -571,6 +577,7 @@ function vibrate(){
 function setRackTitle(rack){
     if (!rack){
         $('#title').text("Keine Maschine/Bock");
+        return;
     }
     if (rack.name != '' || rack.name != undefined) {
         $('#title').text(rack.name);
