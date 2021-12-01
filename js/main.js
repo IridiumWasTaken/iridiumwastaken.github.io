@@ -4,7 +4,7 @@ import { get, set, del } from '/js/IDB/idb.js';
 import { LastScan } from '/js/lastscan.js';
 
 // init global vars
-const API_URL = 'https://172.20.2.10:3001';
+const API_URL = 'https://172.20.2.10:3001/companies(af330f35-af52-ec11-8128-005056b605fd)/';
 const API_TIMEOUT = 2000;
 const glassRegexp = /(?:S:(S{1}\d+))/g;
 const rackRegexp = /(?:R:([^\s]+)(?:\s{1}#{1}(\d+))?)/gs;
@@ -253,6 +253,11 @@ $(async function(){
             if (confirm("Diese Scheibe wirklich als Ausschuss melden?")){
                 let res = await trashGlass(lastGlass.no);
                 res.text = '';
+                lastGlass = {
+                    type: "Glass",
+                    no: ''
+                };
+                del('lastGlass');
                 let popup = scanPopupTemplate(res);
                 $(popup).appendTo('#content');
 
@@ -325,7 +330,7 @@ async function getGlassInformation(glassNo){
     try {
         let result1 = await $.ajax({
             type: "POST",
-            url: API_URL + '/' + 'companies(8640f26b-f72c-ec11-8122-005056b605fd)/routingLines?$filter=glassNo%20eq%20\'' + glassNo + '\'',
+            url: API_URL + 'routingLines?$filter=glassNo%20eq%20\'' + glassNo + '\'',
             contentType: 'application/json',
             data: JSON.stringify({
                 "username": user.username,
@@ -336,7 +341,7 @@ async function getGlassInformation(glassNo){
         });
         let result2 = await $.ajax({
             type: "POST",
-            url: API_URL + '/' + 'companies(8640f26b-f72c-ec11-8122-005056b605fd)/glassTracking(\'' + glassNo + '\')',
+            url: API_URL + 'glassTracking(\'' + glassNo + '\')',
             contentType: 'application/json',
             data: JSON.stringify({
                 "username": user.username,
@@ -360,7 +365,7 @@ async function updateGlassRack(glassNo, rackCode){
     try {
         let result = await $.ajax({
             type: "POST",
-            url: API_URL + '/' + 'companies(8640f26b-f72c-ec11-8122-005056b605fd)/glassTracking(\'' + glassNo + '\')/Microsoft.NAV.update',
+            url: API_URL + 'glassTracking(\'' + glassNo + '\')/Microsoft.NAV.update',
             contentType: "application/json",
             data: JSON.stringify({
                 "username": user.username,
@@ -396,7 +401,7 @@ async function getAllRacks(){
     try{
         let result = await $.ajax({
             type: "POST",
-            url: API_URL + '/' + 'companies(8640f26b-f72c-ec11-8122-005056b605fd)/glassRacks',
+            url: API_URL + 'glassRacks',
             contentType: "application/json",
             data: JSON.stringify({
                 "username": user.username,
@@ -435,7 +440,7 @@ async function getAllGlassNosPerRack(rackCode){
     try {
         let result = await $.ajax({
             type: "POST",
-            url: API_URL + '/' + 'companies(8640f26b-f72c-ec11-8122-005056b605fd)/glassTracking?$filter=rack eq \'' + rackCode + '\'',
+            url: API_URL + 'glassTracking?$filter=rack eq \'' + rackCode + '\'',
             contentType: "application/json",
             data: JSON.stringify({
                 "username": user.username,
@@ -483,7 +488,7 @@ async function handleOperation(glassInfo, operationNo, type){
     try {
         let result = await $.ajax({
             type: "POST",
-            url: API_URL + '/' + 'companies(8640f26b-f72c-ec11-8122-005056b605fd)/routingLines(\'Released\', \'' + prodOrderNo +'\', ' + routingReferenceNo + ', \'' + routingNo + '\',\'' + operationNo + '\')/Microsoft.NAV.' + type,
+            url: API_URL + 'routingLines(\'Released\', \'' + prodOrderNo +'\', ' + routingReferenceNo + ', \'' + routingNo + '\',\'' + operationNo + '\')/Microsoft.NAV.' + type,
             contentType: 'application/json',
             data: JSON.stringify({
                 "username": user.username,

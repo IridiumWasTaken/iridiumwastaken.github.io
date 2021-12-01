@@ -36,10 +36,10 @@ self.addEventListener('install', function(event) {
 })
 
 self.addEventListener('fetch', function(event) {
-  let url = new URL(event.request.url);
+  /*let url = new URL(event.request.url);
   if (url.port == API_PORT){
     event.respondWith(fetch(event.request))
-  } else {
+  } else {*/
     event.respondWith(
       fetch(event.request)
         .catch(() => {
@@ -52,7 +52,7 @@ self.addEventListener('fetch', function(event) {
             })
         })
     )
-  }
+  //}
 })
 
 self.addEventListener('activate', function(event) {
