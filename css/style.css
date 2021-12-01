@@ -85,11 +85,11 @@ html, body {
     height: 100%;
     color: white;
     background-color: black;
-
     display: flex;
     justify-content:center;
     align-items:center;
-    font-size: 2.5rem;
+    font-size: 2.0rem;
+    flex-direction: column;
 }
 
 #nav div:active{
@@ -145,4 +145,8 @@ table thead th { border-bottom: 1px solid #000; }
 
 #trash:active, #trash:hover {
     background-color: darkred;
+}
+
+.nav_subscript{
+    font-size: 0.8rem;
 }

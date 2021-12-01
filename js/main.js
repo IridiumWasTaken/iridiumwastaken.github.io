@@ -1,6 +1,6 @@
 // Main file responsible for scanning and showing information about scanned glass panes
 
-import { get } from '/js/IDB/idb.js';
+import { get, set } from '/js/IDB/idb.js';
 import { LastScan } from '/js/lastscan.js';
 
 // init global vars
@@ -23,7 +23,6 @@ var lastRack = {
 };
 
 var allRacks = undefined;
-var exampleGlassNo = 'S21000077';
 var refractoryPeriod = 5000;
 var user = undefined;
 
@@ -76,6 +75,18 @@ $(async function(){
         alert(notLoggedInText);
     }
 
+    get('lastGlass').then(function(val){
+        if (val){
+            lastGlass = val;
+        }
+    });
+    get('lastRack').then(function(val){
+        if (val){
+            lastRack = val;
+            setRackTitle(val);
+        }
+    });
+   
     const scanPopupString = await (await fetch('/resources/templates/scan-popup.html')).text();
     const glassInfoString = await (await fetch('/resources/templates/glass_info.html')).text();
     const scanPopupTemplate = Handlebars.compile(scanPopupString);
@@ -123,6 +134,8 @@ $(async function(){
                 lastScan.unshift(lastGlass);
                 resetRegexpIndices();
 
+                set('lastGlass', lastGlass);
+
                 let postingResponse = await postingCases();
                 postingResponse.text = lastScan.text;
 
@@ -149,15 +162,13 @@ $(async function(){
                 lastScan.unshift(lastRack);
                 resetRegexpIndices();
 
+                set('lastRack', lastRack);
+
                 let postingResponse = await postingCases();
                 postingResponse.text = lastScan.text;
 
                 // GUI stuff
-                if (lastRack.name != '' || lastRack.name != undefined) {
-                    $('#title').text(lastRack.name);
-                } else {
-                    $('#title').text(lastRack.no);
-                }
+                setRackTitle(lastRack);
         
                 let scanPopup = scanPopupTemplate(postingResponse);
                 $(scanPopup).appendTo("#content");
@@ -176,6 +187,7 @@ $(async function(){
                     refractoryPeriod);
             } 
         } catch(e){
+            resetRegexpIndices();
             html5QrcodeScanner.resume();
             $('#scan-alert').remove();
         }                
@@ -482,4 +494,12 @@ async function postingCases(){
 
 function vibrate(){
     navigator.vibrate(500);
+}
+
+function setRackTitle(rack){
+    if (rack.name != '' || rack.name != undefined) {
+        $('#title').text(rack.name);
+    } else {
+        $('#title').text(rack.no);
+    }
 }
