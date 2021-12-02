@@ -99,7 +99,7 @@ $(async function(){
     let contentWidth = $('#content').width();
     let maxWidth = 0.9 * Math.min(contentWidth, contentHeight);
     // let maxWidth = 150;
-    const html5QrcodeScanner = new Html5Qrcode("content");
+    var html5QrcodeScanner = new Html5Qrcode("content");
     const qrConfig = { fps: 3, qrbox: {width: maxWidth, height: maxWidth}, verbose: true, aspectRatio: contentHeight/contentWidth};
 
     html5QrcodeScanner.start({facingMode: {exact: "environment"}}, qrConfig, onScanSuccess, onScanFailure);
@@ -309,6 +309,7 @@ $(async function(){
         $('#glass-info').css('color', 'white');
         $('#rack-info').css('color', 'white');
         $('.bi-qr-code-scan').css('color', style.getPropertyValue('--online_bg_color'));
+        html5QrcodeScanner = new Html5Qrcode("content");
         html5QrcodeScanner.start({facingMode: {exact: "environment"}}, qrConfig, onScanSuccess, onScanFailure);
     }
     
