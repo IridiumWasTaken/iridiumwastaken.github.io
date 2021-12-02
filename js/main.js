@@ -30,6 +30,7 @@ const notLoggedInText = "Sie sind nicht angemeldet. Bitte melden Sie sich an.";
 
 // init Handlebarjs helpers
 Handlebars.registerHelper('dateTime', function (aString) {
+    if (!aString){ return ''};
     var bits = aString.slice(0, -1).split(/[-T:]/g);
     var d = new Date(bits[0], bits[1]-1, bits[2]);
     d.setHours(bits[3], bits[4], bits[5]);
@@ -45,6 +46,7 @@ Handlebars.registerHelper('dateTime', function (aString) {
 });
 
 Handlebars.registerHelper('routings', function(aString){
+    if (!aString){ return ''};
     return aString.replace("Glas ", '');
 });
 
